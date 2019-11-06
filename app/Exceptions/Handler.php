@@ -3,9 +3,9 @@
 namespace App\Exceptions;
 
 use Exception;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Validation\ValidationException;
 use Laravel\Lumen\Exceptions\Handler as ExceptionHandler;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -45,6 +45,38 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $exception)
     {
-        return parent::render($request, $exception);
+        if (env('APP_DEBUG')) {
+            return parent::render($request, $exception);
+        }
+
+        if ($exception instanceof ValidationException) {
+            $responseCode = parent::render($request, $exception)->getStatusCode();
+        } else {
+            $responseCode = $exception->getStatusCode();
+        }
+
+        $responseBody = [
+            'success' => false,
+            'errors' => [
+                'status' => $responseCode,
+                'source' => [
+                    'pointer' => $request->path()
+                ]
+            ]
+        ];
+        
+        if ($exception instanceof ValidationException) {
+            $response['errors']['detail'] = $exception->validator->errors()->getMessages();
+        } elseif ($responseCode == 422) {
+            $responseBody['errors']['detail'] = json_decode($exception->getMessage());
+        } elseif ($responseCode == 404) {
+            $responseBody['errors']['detail'] = 'Not Found!';
+        } elseif ($responseCode == 401) {
+            $responseBody['errors']['detail'] = 'Unauthorized!';
+        } else {
+            $responseBody['errors']['detail'] = 'Internal Error!';
+        }
+        
+        return response()->json($responseBody, $responseCode);
     }
 }
