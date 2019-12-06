@@ -24,21 +24,25 @@ class UserResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'type'              => $this->role,
-
+            'type'          => $this->role,
+            
             // Attributes
-            'id'                => $this->id,
-            'first_name'        => $this->first_name,
-            'last_name'         => $this->last_name,
-            'phone_number'      => $this->phone_number,
-            'username'          => $this->when($request->user()->isAdmin(), $this->username),
-            'profile_photo'     => $this->profile_photo,
+            'id'            => $this->id,
+            'firstname'     => $this->firstname,
+            'lastname'      => $this->lastname,
+            'fullname'      => $this->fullname,
+            'phone_number'  => $this->phone_number,
+            'username'      => $this->username,
+            'profile_photo' => $this->profile_photo,
 
             // Relationships
-            'secretary'         => $this->when($this->isDoctor(), new self($this->secretary)),
-            'specialties'       => $this->when($this->isDoctor(), new self($this->specialties)),
-            'doctors'           => $this->when($this->isSecretary(), self::collection($this->doctors)),
-            'medical_record'    => $this->when($this->isPatient(), MedicalRecordResource::collection($this->medicalRecords)),
+            'medical_record_number' => $this->when($this->isPatient(), function () {
+                return $this->medicalRecord->medical_record_number;
+            }),
+            'secretaries'   => $this->when($this->isDoctor(), UserResource::collection($this->secretaries)),
+            'specialties'   => $this->when($this->isDoctor(), SpecialtyResource::collection($this->specialties)),
+            'workScedules'  => $this->when($this->isDoctor(), WorkScheduleResource::collection($this->workSchedules)),
+            // 'doctors'       => $this->when($this->isSecretary(), UserResource::collection($this->doctors)),
         ];
     }
 }

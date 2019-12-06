@@ -16,7 +16,10 @@ class CreateAppointmentExperimentTable extends Migration
         Schema::create('appointment_experiment', function (Blueprint $table) {
             $table->unsignedBigInteger('appointment_id');
             $table->unsignedBigInteger('experiment_id');
+            $table->text('doctor_order')->nullable();
             $table->timestamps();
+
+            $table->primary(['appointment_id', 'experiment_id']);
 
             $table->foreign('appointment_id')->references('id')->on('appointments')->onDelete('cascade');
             $table->foreign('experiment_id')->references('id')->on('experiments')->onDelete('cascade');

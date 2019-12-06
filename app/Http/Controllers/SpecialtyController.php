@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Specialty;
 use Illuminate\Http\Request;
-use App\Http\Resources\Specialty as SpecialtyResource;
+use App\Http\Resources\SpecialtyResource;
 
 class SpecialtyController extends Controller
 {
@@ -26,15 +26,7 @@ class SpecialtyController extends Controller
      */
     public function index(Request $request)
     {
-        if(!$request->user() || $request->user()->isAdmin()) {
-            $specialties = Specialty::all();
-        } else {
-            $specialties = $request->user()->specialty;
-        }
-
-        if ($request->query('q')) {
-            $specialties = Specialty::where('title', 'like', "%{$searchQuery['q']}%")->get();
-        }
+        $specialties = Specialty::all();
 
         return SpecialtyResource::collection($specialties)
             ->additional(['success' => true ]);
@@ -48,11 +40,11 @@ class SpecialtyController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('store', Specialty::class);
+        $this->authorize('storeOrUpdate', Specialty::class);
 
-        $validatedAttributes = $this->validateInput($request);
+        $validatedInput = $this->validateInput($request);
 
-        $newSpecialty = Specialty::create($validatedAttributes);
+        $newSpecialty = Specialty::create($validatedInput);
 
         return new SpecialtyResource($newSpecialty);
     }
@@ -81,9 +73,11 @@ class SpecialtyController extends Controller
     {
         $specialty = Specialty::findOrFail($id);
 
-        $this->authorize('update', $specialty);
+        $this->authorize('storeOrUpdate', $specialty);
 
-        $specialty->update($validatedAttributes);
+        $validatedInput = $this->validateInput($request);
+
+        $specialty->update($validatedInput);
 
         return new SpecialtyResource($specialty);
     }
@@ -98,7 +92,7 @@ class SpecialtyController extends Controller
     {
         $specialty = Specialty::findOrFail($id);
 
-        $this->authorize('update', $specialty);
+        $this->authorize('storeOrUpdate', $specialty);
 
         $specialty->delete();
     }
@@ -113,6 +107,7 @@ class SpecialtyController extends Controller
     {
         return $this->validate($request, [
             'title'         => 'required|string|min:3',
+            'description'   => 'required|string|min:3',
         ]);
     }
 }

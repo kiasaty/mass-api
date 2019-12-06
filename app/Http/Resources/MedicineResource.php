@@ -30,6 +30,14 @@ class MedicineResource extends JsonResource
             'id'            => $this->id,
             'title'         => $this->title,
             'description'   => $this->description,
+
+            // Pivots
+            'count' => $this->whenPivotLoaded('appointment_medicine', function () {
+                return $this->pivot->count;
+            }),
+            'doctor_order' => $this->whenPivotLoaded('appointment_medicine', function () {
+                return $this->pivot->doctor_order;
+            }),
         ];
     }
 }

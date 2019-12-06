@@ -24,17 +24,19 @@ class AppointmentResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'type'          => 'Appointment',
+            'type'  => 'Appointment',
 
             // Attributes
-            'id'            => $this->id,
-            'start_time'    => $this->start_time,
-            'end_time'     => $this->end_time,
+            'id'                => $this->id,
+            'start_time'        => $this->start_time->format('Y/m/d H:i'),
+            'end_time'          => $this->end_time->format('Y/m/d H:i'),
             'doctor_diagnosis'  => $this->doctor_diagnosis,
 
             // Relationships
-            'patient'       => new UserResource($this->patient),
             'doctor'        => new UserResource($this->doctor),
+            'patient'       => new UserResource($this->patient),
+            'medicines'     => MedicineResource::collection($this->medicines),
+            'experiments'   => ExperimentResource::collection($this->experiments),
         ];
     }
 }

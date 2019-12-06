@@ -14,7 +14,7 @@ class CreateDoctorUsersTable extends Migration
     public function up()
     {
         Schema::create('doctor_users', function (Blueprint $table) {
-            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('doctor_id');
             $table->unsignedBigInteger('secretary_id');
             $table->timestamps();
 

@@ -30,6 +30,11 @@ class ExperimentResource extends JsonResource
             'id'            => $this->id,
             'title'         => $this->title,
             'description'   => $this->description,
+
+            // Pivots
+            'doctor_order' => $this->whenPivotLoaded('appointment_experiment', function () {
+                return $this->pivot->doctor_order;
+            }),
         ];
     }
 }

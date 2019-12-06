@@ -27,12 +27,13 @@ class AuthController extends Controller
         $jwt = $this->generateJWT($user);
 
         return response()->json([
-            'success'   => true,
             'token'     => $jwt,
             'user'      => [
+                'id'            => $user->id,
                 'role'          => $user->role,
-                'name'          => $user->first_name,
-                'email'         => $user->last_name,
+                'firstname'     => $user->firstname,
+                'lastname'      => $user->lastname,
+                'fullname'      => $user->firstname . ' ' . $user->lastname,
                 'phone_number'  => $user->phone_number,
                 'profile_photo' => $user->profile_photo,
             ]

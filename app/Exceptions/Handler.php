@@ -6,8 +6,12 @@ use Exception;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Laravel\Lumen\Exceptions\Handler as ExceptionHandler;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpFoundation\Exception\RequestExceptionInterface;
 
 class Handler extends ExceptionHandler
 {
@@ -45,15 +49,11 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $exception)
     {
-        if (env('APP_DEBUG')) {
+        if (env('APP_DEBUG') && (env('APP_ENV') !== 'production') ) {
             return parent::render($request, $exception);
         }
 
-        if ($exception instanceof ValidationException) {
-            $responseCode = parent::render($request, $exception)->getStatusCode();
-        } else {
-            $responseCode = $exception->getStatusCode();
-        }
+        $responseCode = parent::render($request, $exception)->getStatusCode();
 
         $responseBody = [
             'success' => false,
@@ -66,12 +66,12 @@ class Handler extends ExceptionHandler
         ];
         
         if ($exception instanceof ValidationException) {
-            $response['errors']['detail'] = $exception->validator->errors()->getMessages();
+            $responseBody['errors']['detail'] = $exception->errors();
         } elseif ($responseCode == 422) {
             $responseBody['errors']['detail'] = json_decode($exception->getMessage());
         } elseif ($responseCode == 404) {
             $responseBody['errors']['detail'] = 'Not Found!';
-        } elseif ($responseCode == 401) {
+        } elseif ($responseCode == 401 || $responseCode == 403) {
             $responseBody['errors']['detail'] = 'Unauthorized!';
         } else {
             $responseBody['errors']['detail'] = 'Internal Error!';

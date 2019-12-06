@@ -20,6 +20,8 @@ class CreateAppointmentMedicineTable extends Migration
             $table->text('doctor_order')->nullable();
             $table->timestamps();
 
+            $table->primary(['appointment_id', 'medicine_id']);
+
             $table->foreign('appointment_id')->references('id')->on('appointments')->onDelete('cascade');
             $table->foreign('medicine_id')->references('id')->on('medicines')->onDelete('cascade');
         });

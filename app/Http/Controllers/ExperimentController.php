@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Experiment;
 use Illuminate\Http\Request;
-use App\Http\Resources\Experiment as ExperimentResource;
+use App\Http\Resources\ExperimentResource;
 
 class ExperimentController extends Controller
 {
@@ -26,15 +26,7 @@ class ExperimentController extends Controller
      */
     public function index(Request $request)
     {
-        if(!$request->user() || $request->user()->isAdmin()) {
-            $experiments = Experiment::all();
-        } else {
-            $experiments = $request->user()->experiment;
-        }
-
-        if ($request->query('q')) {
-            $experiments = Experiment::where('title', 'like', "%{$searchQuery['q']}%")->get();
-        }
+        $experiments = Experiment::all();
 
         return ExperimentResource::collection($experiments)
             ->additional(['success' => true ]);
@@ -48,11 +40,11 @@ class ExperimentController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('store', Experiment::class);
+        $this->authorize('storeOrUpdate', Experiment::class);
 
-        $validatedAttributes = $this->validateInput($request);
+        $validatedInput = $this->validateInput($request);
 
-        $newExperiment = Experiment::create($validatedAttributes);
+        $newExperiment = Experiment::create($validatedInput);
 
         return new ExperimentResource($newExperiment);
     }
@@ -81,9 +73,11 @@ class ExperimentController extends Controller
     {
         $experiment = Experiment::findOrFail($id);
 
-        $this->authorize('update', $experiment);
+        $this->authorize('storeOrUpdate', $experiment);
 
-        $experiment->update($validatedAttributes);
+        $validatedInput = $this->validateInput($request);
+
+        $experiment->update($validatedInput);
 
         return new ExperimentResource($experiment);
     }
@@ -98,7 +92,7 @@ class ExperimentController extends Controller
     {
         $experiment = Experiment::findOrFail($id);
 
-        $this->authorize('update', $experiment);
+        $this->authorize('storeOrUpdate', $experiment);
 
         $experiment->delete();
     }
@@ -113,6 +107,7 @@ class ExperimentController extends Controller
     {
         return $this->validate($request, [
             'title'         => 'required|string|min:3',
+            'description'   => 'required|string|min:3',
         ]);
     }
 }

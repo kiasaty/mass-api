@@ -24,7 +24,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     * 
     * @var array
     */
-    private const ROLES = [
+    public const ROLES = [
        1 => 'admin',
        2 => 'doctor',
        3 => 'secretary',
@@ -40,6 +40,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     {
        return self::ROLES[ $this->attributes['role_id'] ];
     }
+
     /**
     * Sets the user's role
     * 
@@ -52,27 +53,32 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
           $this->attributes['role_id'] = $roleID;
        }
     }
-    /**
-    * Gets the user's role id
-    *
-    * Usage: $user->role_id
-    * 
-    * @return int user's role id
-    */
-    public function getRoleIdAttribute()
-    {
-       return $this->attributes['role_id'];
-    }
 
     /**
     * Gets the id of a given role
     *
+    * @todo use a function to singular words
     * @param string $role  user's role
     * @return int roleID
     */
     public static function getRoleID($role)
     {
-       return array_search($role, self::ROLES);
+        switch ($role) {
+            case 'admins':
+                $role = 'admin';
+                break;
+            case 'doctors':
+                $role = 'doctor';
+                break;
+            case 'secretaries':
+                $role = 'secretary';
+                break;
+            case 'patients':
+                $role = 'patient';
+                break;
+        }
+
+        return array_search($role, self::ROLES);
     }
     
     /**
@@ -84,9 +90,9 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     *
     * @return string
     */
-    public function getFullNameAttribute()
+    public function getFullnameAttribute()
     {
-        return "{$this->first_name} {$this->last_name}";
+        return "{$this->firstname} {$this->lastname}";
     }
 
     /**
@@ -149,27 +155,31 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      */
     public static function getAll($role)
     {
-        return self::where('role', self::getRoleID($role) )->get();
+        return self::where('role_id', self::getRoleID($role) )->get();
     }
 
     /**
-     * Gets the patient's Medical Record
+     * Gets the appointments associated with the doctor/patient.
      */
-    public function medicalRecord()
+    public function appointments()
     {
-        if ($this->isPatient) {
-            return $this->hasOne('App\MedicalRecord', 'patient_id');
-        }
+        return $this->hasMany('App\Appointment', "{$this->role}_id");
     }
 
     /**
-     * Gets the doctor's work schedule.
+     * Gets the secetary associated with the doctor
      */
-    public function doctor()
+    public function secretaries()
     {
-        if ($this->isDoctor) {
-            return $this->belongsTo('App\User', 'doctor_id');
-        }
+        return $this->belongsToMany('App\User', 'doctor_users', 'doctor_id', 'secretary_id');
+    }
+
+    /**
+     * Gets the patients associated with the doctor/secretary
+     */
+    public function patients()
+    {
+        return $this->belongsToMany('App\User', 'appointments', "{$this->role}_id", 'patient_id');
     }
 
     /**
@@ -177,20 +187,17 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      */
     public function specialties()
     {
-        if ($this->isDoctor) {
-            return $this->belongsToMany('App\Specialty', null, 'doctor_id');
-        }
+        return $this->belongsToMany('App\Specialty', 'doctor_specialty', 'doctor_id');
     }
 
     /**
-     * Gets the secetary associated with the doctor
+     * Gets the doctor's work schedules
      */
-    public function secretary()
+    public function workSchedules()
     {
-        if ($this->isDoctor) {
-            // return $this->hasManyThrough('App\User', 'App\Brand', 'seller_id');
-            // return $this->hasMany('App\User', 'patient_id');
-        }
+        return $this->hasMany('App\WorkSchedule', 'doctor_id')
+                    ->orderBy('day_of_week')
+                    ->orderBy('start_time');
     }
 
     /**
@@ -198,9 +205,27 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      */
     public function doctors()
     {
-        if ($this->isSecretary) {
-            // return $this->hasManyThrough('App\User', 'App\Brand', 'seller_id');
-            // return $this->hasMany('App\User', 'patient_id');
-        }
+        return $this->belongsToMany('App\User', 'doctor_users', 'secretary_id', 'doctor_id');
+    }
+
+    /**
+     * Gets the patient's Medical Record
+     */
+    public function medicalRecord()
+    {
+        return $this->hasOne('App\MedicalRecord', 'patient_id');
+    }
+
+    /**
+     * Generates MRN for the patient.
+     * 
+     * @todo check what create method returns
+     * @return bool
+     */
+    public function generateMedicalRecordNumberForPatient()
+    {
+        $this->medicalRecord()->create([
+            'medical_record_number' => time(),
+        ]);
     }
 }

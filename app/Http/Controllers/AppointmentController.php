@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Appointment;
 use Illuminate\Http\Request;
-use App\Http\Resources\Appointment as AppointmentResource;
+use App\Http\Resources\AppointmentResource;
+use App\User;
 
 class AppointmentController extends Controller
 {
@@ -26,15 +27,9 @@ class AppointmentController extends Controller
      */
     public function index(Request $request)
     {
-        if(!$request->user() || $request->user()->isAdmin()) {
-            $appointments = Appointment::all();
-        } else {
-            $appointments = $request->user()->appointment;
-        }
-
-        if ($request->query('q')) {
-            $appointments = Appointment::where('title', 'like', "%{$searchQuery['q']}%")->get();
-        }
+        $appointments = Appointment::getAppointments(
+            $request->user()
+        );
 
         return AppointmentResource::collection($appointments)
             ->additional(['success' => true ]);
@@ -43,16 +38,23 @@ class AppointmentController extends Controller
     /**
      * Creates a new appointment
      *
+     * @todo check roles
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
-        $this->authorize('store', Appointment::class);
+        $validatedInput = $this->validate($request, [
+            'doctor_id'     => ['required', 'exists:users,id', function ($attribute, $value, $fail) {
+                $doctor = User::find($value);
+                if ($doctor->workSchedules()->count() === 0) {
+                    return $fail('Sorry! This doctor has no free time at the moment.');
+                }
+            }],
+            'patient_id'    => 'required|exists:users,id',
+        ]);
 
-        $validatedAttributes = $this->validateInput($request);
-
-        $newAppointment = Appointment::create($validatedAttributes);
+        $newAppointment = Appointment::schedule($validatedInput);
 
         return new AppointmentResource($newAppointment);
     }
@@ -65,6 +67,8 @@ class AppointmentController extends Controller
      */
     public function show($id)
     {
+        $this->authorize('show', Appointment::class);
+
         $appointment = Appointment::findOrFail($id);
 
         return new AppointmentResource($appointment);
@@ -83,7 +87,11 @@ class AppointmentController extends Controller
 
         $this->authorize('update', $appointment);
 
-        $appointment->update($validatedAttributes);
+        $validatedInput = $this->validate($request, [
+            'doctor_diagnosis'  => 'required|string|min:3',
+        ]);
+
+        $appointment->update($validatedInput);
 
         return new AppointmentResource($appointment);
     }
@@ -98,21 +106,8 @@ class AppointmentController extends Controller
     {
         $appointment = Appointment::findOrFail($id);
 
-        $this->authorize('update', $appointment);
+        $this->authorize('destroy', $appointment);
 
         $appointment->delete();
-    }
-
-    /**
-     * Validates user's input
-     * 
-     * @param  \Illuminate\Http\Request  $request
-     * @return Array  validated input
-     */
-    private function validateInput($request)
-    {
-        return $this->validate($request, [
-            'title'         => 'required|string|min:3',
-        ]);
     }
 }

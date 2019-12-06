@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Medicine;
 use Illuminate\Http\Request;
-use App\Http\Resources\Medicine as MedicineResource;
+use App\Http\Resources\MedicineResource;
 
 class MedicineController extends Controller
 {
@@ -19,46 +19,38 @@ class MedicineController extends Controller
     }
 
     /**
-     * Gets all medicines
+     * Gets all medicines.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
     {
-        if(!$request->user() || $request->user()->isAdmin()) {
-            $medicines = Medicine::all();
-        } else {
-            $medicines = $request->user()->medicine;
-        }
-
-        if ($request->query('q')) {
-            $medicines = Medicine::where('title', 'like', "%{$searchQuery['q']}%")->get();
-        }
+        $medicines = Medicine::all();
 
         return MedicineResource::collection($medicines)
             ->additional(['success' => true ]);
     }
 
     /**
-     * Creates a new medicine
+     * Creates a new medicine.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
-        $this->authorize('store', Medicine::class);
+        $this->authorize('storeOrUpdate', Medicine::class);
 
-        $validatedAttributes = $this->validateInput($request);
+        $validatedInput = $this->validateInput($request);
 
-        $newMedicine = Medicine::create($validatedAttributes);
+        $newMedicine = Medicine::create($validatedInput);
 
         return new MedicineResource($newMedicine);
     }
 
     /**
-     * Gets an medicine
+     * Gets a medicine.
      *
      * @param  int $id medicineID
      * @return \Illuminate\Http\Response
@@ -71,7 +63,7 @@ class MedicineController extends Controller
     }
 
     /**
-     * Edits an medicine
+     * Edits a medicine.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int $id medicineID
@@ -81,15 +73,17 @@ class MedicineController extends Controller
     {
         $medicine = Medicine::findOrFail($id);
 
-        $this->authorize('update', $medicine);
+        $this->authorize('storeOrUpdate', $medicine);
 
-        $medicine->update($validatedAttributes);
+        $validatedInput = $this->validateInput($request);
+
+        $medicine->update($validatedInput);
 
         return new MedicineResource($medicine);
     }
 
     /**
-     * Deletes an medicine
+     * Deletes a medicine.
      *
      * @param  int $id medicineID
      * @return \Illuminate\Http\Response
@@ -98,13 +92,13 @@ class MedicineController extends Controller
     {
         $medicine = Medicine::findOrFail($id);
 
-        $this->authorize('update', $medicine);
+        $this->authorize('storeOrUpdate', $medicine);
 
         $medicine->delete();
     }
 
     /**
-     * Validates user's input
+     * Validates user's input.
      * 
      * @param  \Illuminate\Http\Request  $request
      * @return Array  validated input
@@ -113,6 +107,7 @@ class MedicineController extends Controller
     {
         return $this->validate($request, [
             'title'         => 'required|string|min:3',
+            'description'   => 'required|string|min:3',
         ]);
     }
 }

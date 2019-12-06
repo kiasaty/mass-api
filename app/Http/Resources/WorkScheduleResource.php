@@ -28,11 +28,9 @@ class WorkScheduleResource extends JsonResource
 
             // Attributes
             'id'            => $this->id,
-            'start_time'         => $this->start_time,
-            'end_time'   => $this->end_time,
-
-            // Relationships
-            'user'          => new UserResource($this->user),
+            'day_of_week'   => getDayTitle($this->day_of_week),
+            'start_time'    => substr($this->start_time, 0, 5),
+            'end_time'      => substr($this->end_time, 0, 5),
         ];
     }
 }
