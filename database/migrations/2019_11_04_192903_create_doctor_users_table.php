@@ -18,7 +18,7 @@ class CreateDoctorUsersTable extends Migration
             $table->unsignedBigInteger('secretary_id');
             $table->timestamps();
 
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('doctor_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('secretary_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
