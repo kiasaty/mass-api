@@ -68,7 +68,7 @@ class Handler extends ExceptionHandler
         if ($exception instanceof ValidationException) {
             $responseBody['errors']['detail'] = $exception->errors();
         } elseif ($responseCode == 422) {
-            $responseBody['errors']['detail'] = json_decode($exception->getMessage());
+            $responseBody['errors']['detail'] = $exception->getMessage();
         } elseif ($responseCode == 404) {
             $responseBody['errors']['detail'] = 'Not Found!';
         } elseif ($responseCode == 401 || $responseCode == 403) {

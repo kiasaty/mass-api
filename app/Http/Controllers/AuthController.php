@@ -9,20 +9,18 @@ use Illuminate\Http\Request;
 class AuthController extends Controller
 {
     /**
-     * Athenticate the user and return the Token
+     * Authenticate the user and return the Token
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response JWT
      */
     public function authenticate(Request $request)
     {
-        $credentials = $this->validateCredentials($request);
+        $credentials = $this->validateInput($request);
 
         $user = $this->findUser($credentials);
-        
-        if (is_null($user) || $this->credentialsAreNotValid($user, $credentials)) {
-            return $this->credentialsAreNotValidResponse($request);
-        }
+
+        $this->checkIfCredentialsAreCorrect($user, $credentials);
 
         $jwt = $this->generateJWT($user);
 
@@ -46,7 +44,7 @@ class AuthController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return array validated credentials
      */
-    private function validateCredentials(Request $request)
+    private function validateInput(Request $request)
     {
         return $this->validate($request, [
             'username'  => 'required|string',
@@ -67,28 +65,17 @@ class AuthController extends Controller
     
 
     /**
-     * Validates the user credentials.
+     * Check if the credentials are correct.
      *
      * @param  \App\User $user
      * @param  array $credentials
-     * @param  bool
+     * @throws \Exception
      */
-    private function credentialsAreNotValid($user, $credentials)
+    private function checkIfCredentialsAreCorrect($user, $credentials)
     {
-        return ! app('hash')->check($credentials['password'], $user->password);
-    }
-
-    /**
-     * Returns wrong credentials response.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    private function credentialsAreNotValidResponse(Request $request)
-    {
-        abort(422, json_encode([
-            'credentials' => 'Wrong Credentials!',
-        ]));
+        if (is_null($user) || !app('hash')->check($credentials['password'], $user->password)) {
+            abort(422, 'Wrong Credentials!');
+        }
     }
 
     /**
