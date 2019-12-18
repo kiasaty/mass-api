@@ -1,7 +1,10 @@
 <?php
 
+namespace Tests\Unit;
+
 use Laravel\Lumen\Testing\DatabaseMigrations;
 use Laravel\Lumen\Testing\DatabaseTransactions;
+use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
@@ -14,8 +17,6 @@ class ExampleTest extends TestCase
     {
         $this->get('/');
 
-        $this->assertEquals(
-            $this->app->version(), $this->response->getContent()
-        );
+        $this->assertResponseStatus(200);
     }
 }
