@@ -3,5 +3,6 @@
 Homestead.json
 Homestead.yaml
 .env
+.env.testing
 /.vscode
 .phpunit.result.cache
