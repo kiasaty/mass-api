@@ -13,23 +13,16 @@ class Appointment extends Model
      * @var array
      */
     protected $guarded = [];
-    
-    /**
-    * The attributes that should be cast to native types.
-    *
-    * @var array
-    */
-   protected $casts = [
-       'start_time' => 'datetime',
-       'end_time' => 'datetime',
-   ];
 
     /**
-     * The default appointment duration.
+     * The attributes that should be cast to native types.
      *
-     * @var int  in minutes
+     * @var array
      */
-    protected $defaultAppointmentDuration = 20;
+    protected $casts = [
+        'start_time' => 'datetime',
+        'end_time' => 'datetime',
+    ];
 
     /**
      * Gets the patient associated with this appointment.
