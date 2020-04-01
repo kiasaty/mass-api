@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\User;
 use Firebase\JWT\JWT;
 use Illuminate\Http\Request;
+use App\Http\Resources\UserResource;
 
 class AuthController extends Controller
 {
@@ -24,18 +25,8 @@ class AuthController extends Controller
 
         $jwt = $this->generateJWT($user);
 
-        return response()->json([
-            'token'     => $jwt,
-            'user'      => [
-                'id'            => $user->id,
-                'role'          => $user->role,
-                'firstname'     => $user->firstname,
-                'lastname'      => $user->lastname,
-                'fullname'      => $user->firstname . ' ' . $user->lastname,
-                'phone_number'  => $user->phone_number,
-                'profile_photo' => $user->profile_photo,
-            ]
-        ]);
+        return (new UserResource($user))
+            ->additional(['token' => $jwt ]);
     }
 
     /**
@@ -73,9 +64,7 @@ class AuthController extends Controller
      */
     private function checkIfCredentialsAreCorrect($user, $credentials)
     {
-        $isPasswordCorrect = app('hash')->check($credentials['password'], $user->password);
-
-        if (is_null($user) || !$isPasswordCorrect) {
+        if (is_null($user) || !app('hash')->check($credentials['password'], $user->password)) {
             abort(422, 'Wrong Credentials!');
         }
     }
