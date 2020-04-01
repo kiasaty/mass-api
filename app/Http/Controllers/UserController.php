@@ -48,20 +48,12 @@ class UserController extends Controller
             $this->authorize('store', User::class);
         }
         
-        $validatedInput = $this->validate($request, [
-            'firstname'     => 'required|string|min:3|regex:/^[A-Za-z]+$/',
-            'lastname'      => 'required|string|min:3|regex:/^[A-Za-z]+$/',
-            'phone_number'  => ['required', 'regex:/^(\+989|00989|989|09|9)\d{9}$/' , 'unique:users'],
-            'username'      => 'required|string|min:3|regex:/^\S*$/|unique:users',
-            'password'      => 'required|min:4|confirmed',
-            'profile_photo' => 'nullable',
-            'profile_photo' => 'image|mimes:jpeg,png,jpg,gif|max:5120'
-        ]);
+        $validatedInput = $this->validateInput($request);
 
         $validatedInput['role_id'] = User::getRoleID($role);
         $validatedInput['password'] = app('hash')->make($validatedInput['password']);
 
-        if ($request->has('profile_photo')) {
+        if ($request->filled('profile_photo')) {
             $validatedInput['profile_photo'] = $this->saveProfilePhoto($request);
         }
 
@@ -110,21 +102,13 @@ class UserController extends Controller
 
         $this->authorize('update', $user);
 
-        $validatedInput = $this->validate($request, [
-            'firstname'     => 'sometimes|required|string|min:3|regex:/^[A-Za-z]+$/',
-            'lastname'      => 'sometimes|required|string|min:3|regex:/^[A-Za-z]+$/',
-            'phone_number'  => ['sometimes', 'required', 'regex:/^(\+989|00989|989|09|9)\d{9}$/', Rule::unique('users')->ignore($user)],
-            'username'      => ['sometimes', 'required', 'string', 'min:3', 'regex:/^\S*$/', Rule::unique('users')->ignore($user)],
-            'password'      => 'sometimes|required|min:4|confirmed',
-            'profile_photo' => 'nullable',
-            'profile_photo' => 'image|mimes:jpeg,png,jpg,gif|max:5120'
-        ]);
+        $validatedInput = $this->validateInput($request, $user);
 
         if ($request->filled('password')) {
             $validatedInput['password'] = app('hash')->make($validatedInput['password']);
         }
 
-        if ($request->has('profile_photo')) {
+        if ($request->filled('profile_photo')) {
             $validatedInput['profile_photo'] = $this->saveProfilePhoto($request);
         }
 
@@ -177,5 +161,42 @@ class UserController extends Controller
         if ($isProfilePhotoSaved) {
             return "images/profiles/$imageFileName";
         }
+    }
+
+    /**
+     * Validates user's input
+     * 
+     * @todo make use of this method in validation. -test this before using
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\User  $user
+     * @return Array  validated input
+     */
+    private function validateInput($request, $user = null)
+    {
+        $rules = [
+            'firstname'     => ['required', 'string',' min:3', 'regex:/^[A-Za-z]+$/'],
+            'lastname'      => ['required', 'string', 'min:3', 'regex:/^[A-Za-z]+$/'],
+            'phone_number'  => ['required', 'regex:/^(\+989|00989|989|09|9)\d{9}$/' , 'unique:users'],
+            'username'      => ['required', 'string', 'min:3', 'regex:/^\S*$/', 'unique:users'],
+            'password'      => ['required', 'min:4', 'confirmed'],
+            'profile_photo' => ['nullable'],
+            'profile_photo' => ['image', 'mimes:jpeg,png,jpg,gif', 'max:5120']
+        ];
+
+        if ($request->isMethod('put')) {
+
+            $rules['phone_number'][2]  = Rule::unique('users')->ignore($user);
+            $rules['username'][4]      = Rule::unique('users')->ignore($user);
+            
+            foreach($rules as $key => $rule) {
+                $index = array_search("required", $rule);
+                if ($index !== false) {
+                    $rules[$key][$index] = 'sometimes';
+                }
+            }
+            
+        }
+
+        return $this->validate($request, $rules);
     }
 }
