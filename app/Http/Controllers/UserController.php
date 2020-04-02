@@ -176,7 +176,7 @@ class UserController extends Controller
         $rules = [
             'firstname'     => ['required', 'string',' min:3', 'regex:/^[A-Za-z]+$/'],
             'lastname'      => ['required', 'string', 'min:3', 'regex:/^[A-Za-z]+$/'],
-            'phone_number'  => ['required', 'regex:/^(\+989|00989|989|09|9)\d{9}$/' , 'unique:users'],
+            'phone_number'  => ['required', 'string'],
             'username'      => ['required', 'string', 'min:3', 'regex:/^\S*$/', 'unique:users'],
             'password'      => ['required', 'min:4', 'confirmed'],
             'profile_photo' => ['nullable'],
@@ -185,7 +185,6 @@ class UserController extends Controller
 
         if ($request->isMethod('put')) {
 
-            $rules['phone_number'][2]  = Rule::unique('users')->ignore($user);
             $rules['username'][4]      = Rule::unique('users')->ignore($user);
             
             foreach($rules as $key => $rule) {
